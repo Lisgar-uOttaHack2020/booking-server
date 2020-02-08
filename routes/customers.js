@@ -21,6 +21,7 @@ router.post('/register', function(req, res) {
       res.status(400).send('At least one child must be defined.')
   }
   else {
+    var children = Array();
     if (typeof req.body.children !== Array) {
         req.body.children = Array(req.body.children)
     }
