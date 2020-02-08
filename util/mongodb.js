@@ -7,7 +7,7 @@ var name = 'booking'; */
 
 function mongoDbHelper(callback) {
 
-    MongoClient.connect(url, { useUnifiedTopology: true }, function(err, db) {
+    MongoClient.connect(url, function(err, db) {
         if (err) throw err;
 
         callback(db, name);

@@ -1,5 +1,6 @@
 var express = require('express');
 const mdh = require('../util/mongodb')
+const me = require('../util/error')
 const bodyParser = require('body-parser');
 
 var router = express.Router();
@@ -11,20 +12,17 @@ router.use(bodyParser.urlencoded({ extended: true }));
 /* POST new customer */
 router.post('/register', function(req, res) {
   console.log('request received');
-  if (!'name' in req.body) {
-    res.status(400).send('Name of customer must be defined.');
+  if (!('name' in req.body) || req.body.name == null) {
+    res.status(400).send(me.makeErrorJson('Name of customer must be defined.'));
   }
-  else if (!'email' in req.body) {
-    res.status(400).send('Email of customer must be defined.');
+  else if (!('email' in req.body) || req.body.email == null) {
+    res.status(400).send(me.makeErrorJson('Email of customer must be defined.'));
   }
-  else if (!'children' in req.body) {
-      res.status(400).send('At least one child must be defined.')
+  else if (!('children' in req.body) || req.body.children == null) {
+    res.status(400).send(me.makeErrorJson('At least one child must be defined.'));
   }
   else {
-    var children = Array();
-    if (typeof req.body.children !== Array) {
-        req.body.children = Array(req.body.children)
-    }
+    req.body.children = JSON.parse(req.body.children);
     customer = {
         name: req.body.name,
         email: req.body.email,
