@@ -1,9 +1,8 @@
-var express = require('express');
+const express = require('express');
 const mdh = require('../util/mongodb')
 const me = require('../util/error')
 const bodyParser = require('body-parser');
-
-var router = express.Router();
+const router = express.Router();
 
 var customer = null;
 
@@ -30,7 +29,7 @@ router.post('/', async function(req, res) {
     const promise = new Promise(function(resolve, reject) {
         mdh.mongoDbHelper(function(database) {
             const db = database; 
-            const dbo = db.db("booking");
+            const dbo = db.db(global.NAME);
         
             dbo.collection('customers').insertOne(customer, function(err, result) {
                 if (err) reject(err);
@@ -38,10 +37,10 @@ router.post('/', async function(req, res) {
                 db.close();
             });
         });
-      })
+    })
 
-      const customerId = await promise;
-      res.status(200).send(JSON.stringify({ id: customerId}));
+    const customerId = await promise;
+    res.status(200).send(JSON.stringify({ id: customerId}));
   }
 });
 

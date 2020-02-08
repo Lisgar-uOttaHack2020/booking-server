@@ -9,7 +9,7 @@ const consultant = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
-router.get('/', async function(req, res) {
+router.get('/', async function(res) {
     const promise = new Promise(function(resolve, reject) {
         mdh.mongoDbHelper(function(database) {
             const db = database; 

@@ -1,19 +1,19 @@
-var express = require('express');
+const express = require('express');
 const mdh = require('../util/mongodb')
 const me = require('../util/error')
 const bodyParser = require('body-parser');
 
-var router = express.Router();
+const router = express.Router();
 
 var consultant = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
-router.get('/', function(req, res) {
+router.get('/', async function(res) {
     var promise = new Promise(function(resolve, reject) {
         mdh.mongoDbHelper(function(database) {
             var db = database; 
-            var dbo = db.db("booking");
+            var dbo = db.db(global.NAME);
         
             dbo.collection('consultants').find({}).toArray(function(err, result) {
                 if (err) reject(err);
@@ -23,19 +23,12 @@ router.get('/', function(req, res) {
         });
       })
 
-      var getReturnId = async() => {
-          var consultants = await promise;
-
-          return consultants;
-      }
-
-      getReturnId().then(function(customerId) {
-        res.status(200).send(customerId);
-     });
+      const consultantId = await promise;
+      res.status(200).send(JSON.stringify({ id: consultantId}));
 });
 
 /* POST new consultant */
-router.post('/register', function(req, res) {
+router.post('/register', async function(req, res) {
     if (!('name' in req.body) || req.body.name == null) {
       res.status(400).send(me.makeErrorJson('Name of consultant must be defined.'));
     }
@@ -50,12 +43,13 @@ router.post('/register', function(req, res) {
       consultant = {
           name: req.body.name,
           email: req.body.email,
+          timeInt: (req.body.timeInt === null) ? 10 : req.body.timeInt,
           availability: availabilityList
       }
       var promise = new Promise(function(resolve, reject) {
         mdh.mongoDbHelper(function(database) {
             var db = database; 
-            var dbo = db.db("booking");
+            var dbo = db.db(global.NAME);
         
             dbo.collection('consultants').insertOne(consultant, function(err, result) {
                 if (err) reject(err);
@@ -65,15 +59,8 @@ router.post('/register', function(req, res) {
         });
       })
 
-      var getReturnId = async() => {
-          var customerId = await promise;
-
-          return customerId;
-      }
-
-      getReturnId().then(function(customerId) {
-        res.status(200).send(customerId);
-     });
+      const consultantId = await promise;
+      res.status(200).send(JSON.stringify({ id: consultantId}));
     }
   });
 
