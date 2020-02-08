@@ -7,11 +7,10 @@ global.NAME = 'booking';
 
 function mongoDbHelper(callback) {
 
-    MongoClient.connect(url, { useUnifiedTopology: true }, function(err, db) {
-        if (err) throw err;
-
-        callback(db);
-    });
+  MongoClient.connect(url, { useUnifiedTopology: true }, function(err, db) {
+    if (err) throw err;
+    callback(db);
+  });
 }
 
 exports.mongoDbHelper = mongoDbHelper

@@ -21,22 +21,22 @@ router.post('/', async function(req, res) {
   }
   else {
     customer = {
-        name: req.body.name,
-        email: req.body.email,
-        children: req.body.children
+      name: req.body.name,
+      email: req.body.email,
+      children: req.body.children
     }
 
     const promise = new Promise(function(resolve, reject) {
-        mdh.mongoDbHelper(function(database) {
-            const db = database; 
-            const dbo = db.db(global.NAME);
+      mdh.mongoDbHelper(function(database) {
+        const db = database; 
+        const dbo = db.db(global.NAME);
         
-            dbo.collection('customers').insertOne(customer, function(err, result) {
-                if (err) reject(err);
-                resolve(result.insertedId)
-                db.close();
-            });
+        dbo.collection('customers').insertOne(customer, function(err, result) {
+          if (err) reject(err);
+          resolve(result.insertedId)
+          db.close();
         });
+      });
     })
 
     const customerId = await promise;
