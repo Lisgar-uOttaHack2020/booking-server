@@ -20,6 +20,9 @@ router.post('/register', function(req, res) {
       res.status(400).send('At least one child must be defined.')
   }
   else {
+    if (typeof req.body.children !== Array) {
+        req.body.children = Array(req.body.children)
+    }
     customer = {
         name: req.body.name,
         email: req.body.email,
@@ -31,18 +34,12 @@ router.post('/register', function(req, res) {
 });
 
 module.exports = router;
-/* dbo.collection("customers").find().sort(mysort).toArray(function(err, result) {
-    if (err) throw err;
-    console.log(result);
-    db.close();
-});
- */
+
 function addCustomer(database) {
     var db = database; 
     var dbo = db.db("booking");
 
-    console.log(customer);
-
+    //todo: check that email is unique
     dbo.collection('customers').insertOne(customer, function(err, result) {
         if (err) throw err;
         console.log(result);
