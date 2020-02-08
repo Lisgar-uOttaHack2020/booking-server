@@ -1,12 +1,13 @@
 var createError = require('http-errors');
+var cors = require('cors')
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
-var customerRouter = require('./routes/customer');
-var consultantRounter = require('./routes/consultant')
+var customerRouter = require('./routes/customers');
+var consultantRouter = require('./routes/consultants')
 
 var app = express();
 
@@ -19,13 +20,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(function(req, res) {
-    res.header('Access-Control-Allow-Origin', '*'); // update to match the domain you will make the request from
-    res.header('Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept');
-  });
-
 app.use('/', indexRouter);
 app.use('/customers', customerRouter);
+app.use('/consultants', consultantRouter);
+app.use(cors());
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

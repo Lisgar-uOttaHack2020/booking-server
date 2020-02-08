@@ -10,6 +10,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 
 /* POST new customer */
 router.post('/register', function(req, res) {
+  console.log('request received');
   if (!'name' in req.body) {
     res.status(400).send('Name of customer must be defined.');
   }
@@ -35,9 +36,9 @@ router.post('/register', function(req, res) {
 
 module.exports = router;
 
-function addCustomer(database) {
+function addCustomer(database, name) {
     var db = database; 
-    var dbo = db.db("booking");
+    var dbo = db.db(name);
 
     //todo: check that email is unique
     dbo.collection('customers').insertOne(customer, function(err, result) {
