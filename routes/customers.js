@@ -10,8 +10,7 @@ var customer = null;
 router.use(bodyParser.urlencoded({ extended: true }));
 
 /* POST new customer */
-router.post('/', function(req, res) {
-  console.log('request received');
+router.post('/', async function(req, res) {
   if (!('name' in req.body) || req.body.name == null) {
     res.status(400).send(me.makeErrorJson('Name of customer must be defined.'));
   }
@@ -27,20 +26,23 @@ router.post('/', function(req, res) {
         email: req.body.email,
         children: req.body.children
     }
-    mdh.mongoDbHelper(addCustomer);
-    res.status(200).send(req.body);
+
+    const promise = new Promise(function(resolve, reject) {
+        mdh.mongoDbHelper(function(database) {
+            const db = database; 
+            const dbo = db.db("booking");
+        
+            dbo.collection('customers').insertOne(customer, function(err, result) {
+                if (err) reject(err);
+                resolve(result.insertedId)
+                db.close();
+            });
+        });
+      })
+
+      const customerId = await promise;
+      res.status(200).send(JSON.stringify({ id: customerId}));
   }
 });
 
 module.exports = router;
-
-function addCustomer(database, name) {
-    var db = database; 
-    var dbo = db.db(name);
-
-    dbo.collection('customers').insertOne(customer, function(err, result) {
-        if (err) throw err;
-        console.log(result);
-        db.close();
-    })
-}

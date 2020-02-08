@@ -9,6 +9,31 @@ var consultant = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
+router.get('/', function(req, res) {
+    var promise = new Promise(function(resolve, reject) {
+        mdh.mongoDbHelper(function(database) {
+            var db = database; 
+            var dbo = db.db("booking");
+        
+            dbo.collection('consultants').find({}).toArray(function(err, result) {
+                if (err) reject(err);
+                resolve(result);
+                db.close();
+            })
+        });
+      })
+
+      var getReturnId = async() => {
+          var consultants = await promise;
+
+          return consultants;
+      }
+
+      getReturnId().then(function(customerId) {
+        res.status(200).send(customerId);
+     });
+});
+
 /* POST new consultant */
 router.post('/register', function(req, res) {
     if (!('name' in req.body) || req.body.name == null) {

@@ -9,7 +9,6 @@ function mongoDbHelper(callback) {
 
     MongoClient.connect(url, { useUnifiedTopology: true }, function(err, db) {
         if (err) throw err;
-
         callback(db);
     });
 }

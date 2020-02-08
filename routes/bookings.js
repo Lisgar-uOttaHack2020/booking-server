@@ -1,18 +1,36 @@
-var express = require('express');
+const express = require('express');
 const mdh = require('../util/mongodb')
 const me = require('../util/error')
 const bodyParser = require('body-parser');
 
-var router = express.Router();
+const router = express.Router();
 
-var consultant = null;
+const consultant = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
+router.get('/', async function(req, res) {
+    const promise = new Promise(function(resolve, reject) {
+        mdh.mongoDbHelper(function(database) {
+            const db = database; 
+            const dbo = db.db("booking");
+        
+            dbo.collection('consultants').find({}).toArray(function(err, result) {
+                if (err) reject(err);
+                resolve(result);
+                db.close();
+            })
+        });
+      })
+
+      const customerId = await promise;
+      res.status(200).send(customerId);
+});
+
 /* POST new consultant */
-router.post('/', function(req, res) {
-    if (!('name' in req.body) || req.body.name == null) {
-      res.status(400).send(me.makeErrorJson('Name of consultant must be defined.'));
+router.post('/register', function(req, res) {
+    if (!('parentId' in req.body) || req.body.parentId == null) {
+      res.status(400).send(me.makeErrorJson('Parent id must be defined.'));
     }
     else if (!('email' in req.body) || req.body.email == null) {
       res.status(400).send(me.makeErrorJson('Email of consultant must be defined.'));
@@ -27,18 +45,30 @@ router.post('/', function(req, res) {
           email: req.body.email,
           availability: availabilityList
       }
-      mdh.mongoDbHelper(addConsultant);
-      res.status(200).send(req.body);
+      const promise = new Promise(function(resolve, reject) {
+        mdh.mongoDbHelper(function(database) {
+            const db = database; 
+            const dbo = db.db("booking");
+        
+            dbo.collection('consultants').insertOne(consultant, function(err, result) {
+                if (err) reject(err);
+                resolve(result.insertedId);
+                db.close();
+            })
+        });
+      })
+
+      const getReturnId = async() => {
+          const customerId = await promise;
+
+          return customerId;
+      }
+
+      getReturnId().then(function(customerId) {
+        res.status(200).send(customerId);
+     });
     }
   });
 
+  
 module.exports = router;
-
-function addConsultant(database) {
-    var db = database; 
-    var dbo = db.db("booking");
-
-    dbo.collection('consultants').insertOne(consultant, function(err, result) {
-        if (err) throw err;
-    })
-}
