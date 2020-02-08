@@ -22,7 +22,6 @@ router.post('/', function(req, res) {
     res.status(400).send(me.makeErrorJson('At least one child must be defined.'));
   }
   else {
-    req.body.children = JSON.parse(req.body.children);
     customer = {
         name: req.body.name,
         email: req.body.email,

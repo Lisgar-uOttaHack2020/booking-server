@@ -10,7 +10,7 @@ var consultant = null;
 router.use(bodyParser.urlencoded({ extended: true }));
 
 /* POST new consultant */
-router.post('/', function(req, res) {
+router.post('/register', function(req, res) {
     if (!('name' in req.body) || req.body.name == null) {
       res.status(400).send(me.makeErrorJson('Name of consultant must be defined.'));
     }
@@ -31,6 +31,8 @@ router.post('/', function(req, res) {
       res.status(200).send(req.body);
     }
   });
+
+  
 
 module.exports = router;
 
