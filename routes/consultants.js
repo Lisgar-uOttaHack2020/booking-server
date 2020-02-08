@@ -27,20 +27,30 @@ router.post('/register', function(req, res) {
           email: req.body.email,
           availability: availabilityList
       }
-      mdh.mongoDbHelper(addConsultant);
-      res.status(200).send(req.body);
+      var promise = new Promise(function(resolve, reject) {
+        mdh.mongoDbHelper(function(database) {
+            var db = database; 
+            var dbo = db.db("booking");
+        
+            dbo.collection('consultants').insertOne(consultant, function(err, result) {
+                if (err) reject(err);
+                resolve(result.insertedId);
+                db.close();
+            })
+        });
+      })
+
+      var getReturnId = async() => {
+          var customerId = await promise;
+
+          return customerId;
+      }
+
+      getReturnId().then(function(customerId) {
+        res.status(200).send(customerId);
+     });
     }
   });
 
   
-
 module.exports = router;
-
-function addConsultant(database) {
-    var db = database; 
-    var dbo = db.db("booking");
-
-    dbo.collection('consultants').insertOne(consultant, function(err, result) {
-        if (err) throw err;
-    })
-}
