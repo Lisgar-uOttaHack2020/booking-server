@@ -10,7 +10,7 @@ var customer = null;
 router.use(bodyParser.urlencoded({ extended: true }));
 
 /* POST new customer */
-router.post('/register', function(req, res) {
+router.post('/', function(req, res) {
   console.log('request received');
   if (!('name' in req.body) || req.body.name == null) {
     res.status(400).send(me.makeErrorJson('Name of customer must be defined.'));
@@ -39,7 +39,6 @@ function addCustomer(database, name) {
     var db = database; 
     var dbo = db.db(name);
 
-    //todo: check that email is unique
     dbo.collection('customers').insertOne(customer, function(err, result) {
         if (err) throw err;
         console.log(result);
