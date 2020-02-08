@@ -8,30 +8,28 @@ var customer = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
-/* POST new customer */
+/* POST new consultant */
 router.post('/register', function(req, res) {
-  if (!'name' in req.body) {
-    res.status(400).send('Name of customer must be defined.');
-  }
-  else if (!'email' in req.body) {
-    res.status(400).send('Email of customer must be defined.');
-  }
-  else if (!'children' in req.body) {
-      res.status(400).send('At least one child must be defined.')
-  }
-  else {
-    if (typeof req.body.children !== Array) {
-        req.body.children = Array(req.body.children)
+    console.log('request received');
+    if (!('name' in req.body) || req.body.name == null) {
+      res.status(400).send(me.makeErrorJson('Name of consultant must be defined.'));
     }
-    customer = {
-        name: req.body.name,
-        email: req.body.email,
-        children: req.body.children
+    else if (!('email' in req.body) || req.body.email == null) {
+      res.status(400).send(me.makeErrorJson('Email of consultant must be defined.'));
     }
-    mdh.mongoDbHelper(addCustomer);
-    res.status(200).send(req.body);
-  }
-});
+    else if (!('bookings' in req.body) || req.body.bookings == null) {
+      res.status(400).send(me.makeErrorJson('At least one booking must be defined.'));
+    }
+    else {
+      let bookings = JSON.parse(req.body.children);
+      teacher = {
+          name: req.body.name,
+          email: req.body.email,
+      }
+      mdh.mongoDbHelper(addCustomer);
+      res.status(200).send(req.body);
+    }
+  });
 
 module.exports = router;
 
@@ -40,7 +38,7 @@ function addCustomer(database) {
     var dbo = db.db("booking");
 
     //todo: check that email is unique
-    dbo.collection('customers').insertOne(customer, function(err, result) {
+    dbo.collection('consultants').insertOne(customer, function(err, result) {
         if (err) throw err;
         console.log(result);
         db.close();
