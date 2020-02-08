@@ -9,8 +9,8 @@ var consultant = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
-router.get('/', async function(res) {
-  var promise = new Promise(function(resolve, reject) {
+router.get('/', async function(req, res) {
+  const promise = new Promise(function(resolve, reject) {
     mdh.mongoDbHelper(function(database) {
       var db = database; 
       var dbo = db.db(global.NAME);
@@ -21,29 +21,29 @@ router.get('/', async function(res) {
         db.close();
       })
     });
-  })
+  });
 
-  const consultantId = await promise;
-  res.status(200).send(JSON.stringify({ id: consultantId}));
+  const data = await promise.catch((err) => console.log(err));
+  res.status(200).send(JSON.stringify(data));
 });
 
 /* POST new consultant */
 router.post('/register', async function(req, res) {
   if (!('name' in req.body) || req.body.name == null) {
-    res.status(400).send(me.makeErrorJson('Name of consultant must be defined.'));
+    res.status(400).send(me.makeErrorJson('name must be defined.'));
   }
   else if (!('email' in req.body) || req.body.email == null) {
-    res.status(400).send(me.makeErrorJson('Email of consultant must be defined.'));
+    res.status(400).send(me.makeErrorJson('email must be defined.'));
   }
   else if (!('availability' in req.body) || req.body.availability == null) {
-    res.status(400).send(me.makeErrorJson('Availability must be defined.'));
+    res.status(400).send(me.makeErrorJson('availability must be defined.'));
   }
   else {
     availabilityList = JSON.parse(req.body.availability);
     consultant = {
       name: req.body.name,
       email: req.body.email,
-      timeInt: (req.body.timeInt === null) ? 10 : req.body.timeInt,
+      timeInt: (req.body.timeInt == null) ? 10 : req.body.timeInt,
       availability: availabilityList
     }
     var promise = new Promise(function(resolve, reject) {

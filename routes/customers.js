@@ -11,10 +11,10 @@ router.use(bodyParser.urlencoded({ extended: true }));
 /* POST new customer */
 router.post('/', async function(req, res) {
   if (!('name' in req.body) || req.body.name == null) {
-    res.status(400).send(me.makeErrorJson('Name of customer must be defined.'));
+    res.status(400).send(me.makeErrorJson('name must be defined.'));
   }
   else if (!('email' in req.body) || req.body.email == null) {
-    res.status(400).send(me.makeErrorJson('Email of customer must be defined.'));
+    res.status(400).send(me.makeErrorJson('email must be defined.'));
   }
   else if (!('children' in req.body) || req.body.children == null) {
     res.status(400).send(me.makeErrorJson('At least one child must be defined.'));
