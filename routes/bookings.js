@@ -3,29 +3,28 @@ const mdh = require('../util/mongodb')
 const ObjectId = require('mongodb').ObjectId; 
 const me = require('../util/error')
 const bodyParser = require('body-parser');
-
 const router = express.Router();
-
-const consultant = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
-router.get('/', async function(res) {
-    const promise = new Promise(function(resolve, reject) {
-        mdh.mongoDbHelper(function(database) {
-            const db = database; 
-            const dbo = db.db("booking");
-        
-            dbo.collection('consultants').find({}).toArray(function(err, result) {
-                if (err) reject(err);
-                resolve(result);
-                db.close();
-            })
-        });
-      })
+router.get('/', async function(req, res) {
+  const promise = new Promise(function(resolve, reject) {
+    mdh.mongoDbHelper(function(database) {
+      const db = database; 
+      const dbo = db.db(global.NAME);
 
-      const customerId = await promise;
-      res.status(200).send(customerId);
+      const query = (req.query.consultantId) ? { consultantId: ObjectId(consultantId) } : {};
+    
+      dbo.collection('bookings').find(query).toArray(function(err, result) {
+        if (err) reject(err);
+        resolve(result);
+        db.close();
+      })
+    });
+  })
+
+  const customerId = await promise.catch((err) => console.log(err));
+  res.status(200).send(customerId);
 });
 
 /* POST new bookings for a parent */
@@ -51,15 +50,19 @@ router.post('/create', function(req, res) {
   }
 
   mdh.mongoDbHelper(function(database) {
+    const promise = new Promise(function(resolve) {
       const db = database; 
       const dbo = db.db(global.NAME);
 
       //check available times for teachers & update them
       const cdb = dbo.collection('consultants')
 
-      let didInsert = false;
+      let numRuns = 0;
 
       data.forEach(function(d) {
+        let didInsert = false;
+        numRuns++;
+
         const o_id = new ObjectId(d.consultantId);
         cdb.findOne({ _id: o_id }, function(err, result) {
           if (err) throw (err);
@@ -67,9 +70,8 @@ router.post('/create', function(req, res) {
           const times = result.availability.dates[d['date']];
 
           //attempts to insert appointment into schedule
-          didInsert = false
           for (var i = 0; i < times.length - 1; i += 2) {
-            if (d.time.start > times[i] && d.time.end < times[i+1]) { //this time works
+            if (d.time.start >= times[i] && d.time.end <= times[i+1]) { //this time works
               //insert start & end time into database
               if (i + 1 == times.length) { //at end of database
                 times.push(d.time.start, d.time.end);
@@ -95,16 +97,28 @@ router.post('/create', function(req, res) {
                 newDb.close();
               });
             });
+            if (numRuns == data.length) {
+              resolve(didInsert);
+            }
           }
           //failed to book appointment -- time slot taken
           else {
             //TODO: Make an error message build up; insert ones that worked
             res.status(400).send(JSON.stringify( { error: 'time slot not available', booking: d } ));
+            if (numRuns == data.length) {
+              resolve(didInsert);
+            }
           }
         })
       });
-      
-      if (didInsert) {
+    });
+
+    //has to wait for other async process to finish before trying to add
+    async function waitInsert(p) {
+      let doRun = await p;
+      if (doRun) { 
+        const db = database;
+        const dbo = db.db(global.NAME)
         dbo.collection('bookings').insertMany(data, function(err) {
           //Note: if bookings fail, a teacher's timetable will seem to have a reserved slot without anyone booking it
           if (err) {
@@ -115,6 +129,9 @@ router.post('/create', function(req, res) {
           db.close();
         })
       }
+    }
+
+    waitInsert(promise);
   });
 });
 
