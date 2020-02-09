@@ -1,5 +1,6 @@
 const express = require('express');
 const mdh = require('../util/mongodb')
+const ObjectId = require('mongodb').ObjectId; 
 const me = require('../util/error')
 const bodyParser = require('body-parser');
 
@@ -29,24 +30,24 @@ router.get('/', async function(res) {
 
 /* POST new bookings for a parent */
 router.post('/create', function(req, res) {
-  const data = JSON.parse(req.body);
+  //check that required data is present
+  let data = []
+  req.body.forEach(function (booking) {
+    data.push(booking);
+  });
   const required = ['customerId', 'consultantId', 'child', 'date', 'time'];
-  var response = "";
-  var error = false;
-  for (const r in required) {
+  let response = '';
+  let error = false;
+  required.forEach(function(r) {
     data.forEach(function(d, index) {
       if (!d[r]) {
-        if (!data[r]) {
-          response.concat(r + '[' + index + ']');
-          error = true;
-        }
+        response.concat(r + '[' + index + ']');
+        error = true;
       }
     })
-    if (!data[r]) {
-      response.concat(r);
-      error = true;
-    }
-    res.status(400).send(me.makeErrorJson(reponse + ' must be defined.'));
+  });
+  if (error) {
+    res.status(400).send(me.makeErrorJson(response + ' must be defined.'));
   }
 
   mdh.mongoDbHelper(function(database) {
@@ -54,15 +55,19 @@ router.post('/create', function(req, res) {
       const dbo = db.db(global.NAME);
 
       //check available times for teachers & update them
-      const cdb = dbo.collection('consultant')
-      for (d in data) {
-        cdb.findOne({'_id': d.consultantId}, function(err, result) {
+      const cdb = dbo.collection('consultants')
+
+      let didInsert = false;
+
+      data.forEach(function(d) {
+        const o_id = new ObjectId(d.consultantId);
+        cdb.findOne({ _id: o_id }, function(err, result) {
           if (err) throw (err);
 
           const times = result.availability.dates[d['date']];
 
           //attempts to insert appointment into schedule
-          var didInsert = false
+          didInsert = false
           for (var i = 0; i < times.length - 1; i += 2) {
             if (d.time.start > times[i] && d.time.end < times[i+1]) { //this time works
               //insert start & end time into database
@@ -79,24 +84,37 @@ router.post('/create', function(req, res) {
           }
           //appointment booked successfully
           if (didInsert) {
-            const obj = {};
-            obj[d.date] = times;
-            cdb.update({'_id': d.consultantId}, { $set: { 'availability.dates': obj } }, function (err) {
-              if (err) throw (err);
+            mdh.mongoDbHelper(function(database) {
+              const newDb = database;
+              const newCdb = newDb.db(global.NAME).collection('consultants')
+            
+              const obj = {};
+              obj[d.date] = times;
+              newCdb.updateOne({_id: o_id}, { $set: { 'availability.dates': obj } }, function (err, result) {
+                if (err) throw (err);
+                newDb.close();
+              });
             });
           }
+          //failed to book appointment -- time slot taken
           else {
             //TODO: Make an error message build up; insert ones that worked
             res.status(400).send(JSON.stringify( { error: 'time slot not available', booking: d } ));
           }
         })
+      });
+      
+      if (didInsert) {
+        dbo.collection('bookings').insertMany(data, function(err) {
+          //Note: if bookings fail, a teacher's timetable will seem to have a reserved slot without anyone booking it
+          if (err) {
+            res.status(500).send(me.makeErrorJson('error inserting bookings'));
+            throw (err);
+          }
+          res.status(200).send(JSON.stringify( { response: 'successfully added ' + data.length + ' booking(s).' } ));
+          db.close();
+        })
       }
-  
-      dbo.collection('bookings').insertMany(data, function(err) {
-        //Note: if bookings fail, a teacher's timetable will seem to have a reserved slot without anyone booking it
-        if (err) reject(err);
-        db.close();
-      })
   });
 });
 

@@ -1,6 +1,6 @@
 const mdh = require('./mongodb');
 
-deleteCollection('consultants');
+deleteCollection('bookings');
 
 function deleteCollection(collection) {
   mdh.mongoDbHelper(function(database) {
