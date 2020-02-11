@@ -7,8 +7,9 @@ const router = express.Router();
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
+//GET list of bookings for a parent
 router.get('/', async function(req, res) {
-  //
+  //connect to database
   const promise = new Promise(function(resolve, reject) {
     mdh.mongoDbHelper(function(database) {
       const db = database; 
@@ -24,11 +25,12 @@ router.get('/', async function(req, res) {
     });
   })
 
+  //return data via api
   const customerId = await promise.catch((err) => console.log(err));
   res.status(200).send(customerId);
 });
 
-/* POST new bookings for a parent */
+//POST bookings for a customer
 router.post('/create', function(req, res) {
   //check that required data is present
   let data = []
@@ -60,7 +62,9 @@ router.post('/create', function(req, res) {
 
         //check available times for teachers & update them
         let numRuns = 0;
-        data.forEach(function(d) {
+        const numBookings = data.length;
+        const invalidBookings = [];
+        data.forEach(function(d, index) {
           let didInsert = false;
           numRuns++;
 
@@ -94,21 +98,25 @@ router.post('/create', function(req, res) {
               
                 const obj = {};
                 obj[d.date] = times;
-                newCdb.updateOne({_id: o_id}, { $set: { 'availability.dates': obj } }, function (err, result) {
-                  if (err) throw (err);
+
+                //update teacher's available times
+                newCdb.updateOne({_id: o_id}, { $set: { 'availability.dates': obj } }, function (err) {
+                  if (err) resolve (err);
                   newDb.close();
                 });
               });
-              if (numRuns == data.length) {
-                resolve(didInsert);
+              //checked all appointments
+              if (numRuns == numBookings) {
+                resolve(invalidBookings);
               }
             }
             //failed to book appointment -- time slot taken
             else {
-              //TODO: Make an error message build up; insert ones that worked
-              res.status(400).send(JSON.stringify( { error: 'time slot not available', booking: d } ));
-              if (numRuns == data.length) {
-                resolve(didInsert);
+              //add booking to list of failed bookings & remove it from upload list
+              invalidBookings.push(d);
+              data.splice(index, 1);
+              if (numRuns = numBookings) {
+                resolve(invalidBookings)
               }
             }
           })
@@ -116,20 +124,38 @@ router.post('/create', function(req, res) {
       });
 
       //has to wait for other async process to finish before trying to add
-      async function waitInsert(p) {
-        let doRun = await p;
-        if (doRun) { 
+      const waitInsert = async function(p) {
+        let invalidBookings = await p.catch(function(err) {
+          console.log(err);
+          res.status(500).send(util.makeErrorJson('error inserting bookings'));
+          return;
+        });
+        if (data.length != 0) { 
           const db = database;
           const dbo = db.db(global.NAME)
           dbo.collection('bookings').insertMany(data, function(err) {
-            //Note: if bookings fail, a teacher's timetable will seem to have a reserved slot without anyone booking it
             if (err) {
               res.status(500).send(util.makeErrorJson('error inserting bookings'));
               throw (err);
             }
-            res.status(200).send(JSON.stringify( { response: 'successfully added ' + data.length + ' booking(s).' } ));
+            //all bookings work
+            if (invalidBookings.length == 0) {
+              res.status(200).send(JSON.stringify( { response: 'successfully added ' + data.length + ' booking(s).' } ));
+            }
+            //at least one failed
+            else {
+              res.status(200).send(JSON.stringify({
+                response: 'successfully added ' + data.length + ' booking(s).',
+                error: 'time slot(s) not available',
+                bookings: invalidBookings
+              }));
+            } 
             db.close();
           })
+        }
+        //all bookings failed
+        else {
+          res.status(400).send(JSON.stringify( { error: 'time slot(s) not available', bookings: invalidBookings } ));
         }
       }
 
