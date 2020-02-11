@@ -1,7 +1,7 @@
 const mdh = require('./mongodb');
-
 deleteCollection('bookings');
 
+//helper function to wipe databases
 function deleteCollection(collection) {
   mdh.mongoDbHelper(function(database) {
     const db = database; 
