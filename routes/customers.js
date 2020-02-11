@@ -1,6 +1,6 @@
 const express = require('express');
 const mdh = require('../util/mongodb')
-const me = require('../util/error')
+const util = require('../util/util')
 const bodyParser = require('body-parser');
 const router = express.Router();
 
@@ -8,17 +8,18 @@ var customer = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
-/* POST new customer */
+// POST new customer
 router.post('/', async function(req, res) {
-  if (!('name' in req.body) || req.body.name == null) {
-    res.status(400).send(me.makeErrorJson('name must be defined.'));
+  //check that data is valid
+  const required = ['name', 'email', 'children'];
+  const v = util.verify(required, req.body);
+  if (v.error) {
+    res.status(400).send(util.makeErrorJson(v.response + 'is not defined'));
   }
-  else if (!('email' in req.body) || req.body.email == null) {
-    res.status(400).send(me.makeErrorJson('email must be defined.'));
+  else if (req.body.children.length < 1) {
+    res.status(400).send(util.makeErrorJson('At least one child must be defined.'));
   }
-  else if (!('children' in req.body) || req.body.children == null) {
-    res.status(400).send(me.makeErrorJson('At least one child must be defined.'));
-  }
+  //data is valid
   else {
     customer = {
       name: req.body.name,
@@ -26,11 +27,13 @@ router.post('/', async function(req, res) {
       children: req.body.children
     }
 
+    //connect to database
     const promise = new Promise(function(resolve, reject) {
       mdh.mongoDbHelper(function(database) {
         const db = database; 
         const dbo = db.db(global.NAME);
         
+        //insert customer into database
         dbo.collection('customers').insertOne(customer, function(err, result) {
           if (err) reject(err);
           resolve(result.insertedId)
@@ -39,6 +42,7 @@ router.post('/', async function(req, res) {
       });
     })
 
+    //return customer id through api
     const customerId = await promise;
     res.status(200).send(JSON.stringify({ id: customerId}));
   }
