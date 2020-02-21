@@ -8,8 +8,6 @@ const router = express.Router();
 
 const securityKey = 'temp'
 
-var parent = null;
-
 router.use(bodyParser.urlencoded({ extended: true }));
 
 // POST new parent
@@ -31,11 +29,11 @@ router.post('/register/', async function(req, res) {
   }
   //data is valid
   else {
-    parent = {
+    const parent = {
       firstName: req.body['first-name'],
       lastName: req.body['last-name'],
       email: req.body['email'],
-      children: req.body['last-name']
+      children: req.body['children']
     }
 
     //verify that email is unique within database
@@ -104,23 +102,21 @@ router.post('/register/', async function(req, res) {
     }
 
     //insert token into database
-    const tokenPromise = new Promise(function(resolve, reject) {
-      mdh.mongoDbHelper(function(database) {
-        const db = database; 
-        const dbo = db.db();
-        
-        //insert token into database
-        dbo.collection('tokens').replaceOne( { linkId: parentId }, token, { upsert: true }, function(err, result) {
-          if (err) reject(err);
-          resolve(result.insertedId)
-          db.close();
-        });
+    mdh.mongoDbHelper(function(database) {
+      const db = database; 
+      const dbo = db.db();
+      
+      //insert token into database
+      dbo.collection('tokens').replaceOne( { linkId: parentId }, token, { upsert: true }, function(err) {
+        if (err)
+          console.log(err);
+     
+        db.close();
       });
-    })
-    const tokenId = await tokenPromise.catch(err => {
-      console.log(err);
     });
-    res.status(200).send(JSON.stringify({ token: tokenId}));
+
+    res.status(200).send(JSON.stringify({ token: randToken}));
+
   }
 });
 

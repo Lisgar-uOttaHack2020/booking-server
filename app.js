@@ -5,8 +5,8 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const indexRouter = require('./routes/index');
 const parentRouter = require('./routes/parents');
-const teacherRouter = require('./routes/teachers')
-const bookingRouter = require('./routes/bookings')
+const teacherRouter = require('./routes/teachers');
+const bookingRouter = require('./routes/bookings');
 
 const app = express();
 
