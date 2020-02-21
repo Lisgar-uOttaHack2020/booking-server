@@ -13,7 +13,7 @@ var parent = null;
 router.use(bodyParser.urlencoded({ extended: true }));
 
 // POST new parent
-router.post('/', async function(req, res) {
+router.post('/register/', async function(req, res) {
   //check that data is valid
   const required = ['security-key', 'first-name', 'last-name', 'email', 'children'];
   const v = util.verify(required, req.body);
