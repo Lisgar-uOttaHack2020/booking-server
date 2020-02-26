@@ -5,20 +5,20 @@ const bodyParser = require('body-parser');
 
 const router = express.Router();
 
-var consultant = null;
+var teacher = null;
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
-// GET list of consults
+// GET list of teachers
 router.get('/', async function(req, res) {
   //connect to database
   const promise = new Promise(function(resolve, reject) {
     mdh.mongoDbHelper(function(database) {
       var db = database; 
-      var dbo = db.db(global.NAME);
+      var dbo = db.db();
 
       //get list of consultants
-      dbo.collection('consultants').find({}).toArray(function(err, result) {
+      dbo.collection('teachers').find({}).toArray(function(err, result) {
         if (err) reject(err);
         resolve(result);
         db.close();
@@ -31,14 +31,15 @@ router.get('/', async function(req, res) {
   res.status(200).send(JSON.stringify(data));
 });
 
-// POST new consultant
+// POST new teacher
 router.post('/register', async function(req, res) {
   //check that data is valid
-  const required = ['name', 'email', 'availability'];
+  const required = ['first-name', 'last-name', 'email'];
   const v = util.verify(required, req.body);
   if (v.error) {
     res.status(400).send(util.makeErrorJson(v.response + 'is not defined'));
   }
+
   //data is valid
   else {
     availabilityList = JSON.parse(req.body.availability);

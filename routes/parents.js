@@ -4,11 +4,53 @@ const util = require('../util/util')
 const bodyParser = require('body-parser');
 const validator = require('email-validator')
 const crypto = require('crypto')
+const ObjectId = require('mongodb').ObjectId; 
 const router = express.Router();
 
 const securityKey = 'temp'
 
 router.use(bodyParser.urlencoded({ extended: true }));
+
+// GET parent
+router.get('/', async function(req, res) {
+  //connect to database
+  const promise = new Promise(function(resolve, reject) {
+    mdh.mongoDbHelper(function(database) {
+      var db = database; 
+      var dbo = db.db();
+
+      const required = ['token'];
+      const v = util.verify(required, req.query);
+
+      if (v.error) {
+        res.status(400).send(util.makeErrorJson(v.response + 'is not defined'));
+        reject(new Error('token is not defined'));
+      }
+      else {
+        const token = req.query['token']
+        //get list of consultants
+        dbo.collection('tokens').findOne( { _id: token }, function(tokenErr, tokenRes) {
+          if (tokenErr) reject(tokenErr);
+
+          console.log(tokenRes.linkId);
+          
+          dbo.collection('parents').findOne( { _id: ObjectId(tokenRes.linkId) }, function(parentErr, parentRes) {
+            if (parentErr) reject(parentErr);
+            
+            console.log(parentRes)
+            resolve(parentRes);
+
+            db.close();
+          });
+        });
+      }
+    });
+  });
+
+  //return list through api
+  const data = await promise.catch((err) => console.log(err));
+  res.status(200).send(JSON.stringify(data));
+});
 
 // POST new parent
 router.post('/register/', async function(req, res) {
@@ -101,12 +143,15 @@ router.post('/register/', async function(req, res) {
       linkId: parentId
     }
 
+    //TODO: verify that randomly generated token is unique (very very unlikely that it isn't but just in case)
+
     //insert token into database
     mdh.mongoDbHelper(function(database) {
       const db = database; 
       const dbo = db.db();
       
       //insert token into database
+      //TODO: instead of just replacing tokens, give tokens an expiry date
       dbo.collection('tokens').replaceOne( { linkId: parentId }, token, { upsert: true }, function(err) {
         if (err)
           console.log(err);

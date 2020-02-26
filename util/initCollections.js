@@ -9,4 +9,7 @@ mongoDb.mongoDbHelper(function(database) {
 
   //set up parents
   dbo.collection('parents').createIndex( { 'email': 1 }, { unique: true } );
+
+  //set up tokens
+  dbo.collection('tokens').createIndex( { 'link-id': 1 }, { unique: true } );
 });
