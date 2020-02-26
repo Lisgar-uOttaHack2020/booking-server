@@ -127,12 +127,12 @@ router.post('/register/', async function(req, res) {
     //generate random token that links to teacher
     randToken = crypto.randomBytes(64).toString('hex');
     const token = {
-      _id: randToken,
+      value: randToken,
       type: 'teacher',
-      linkId: teacherId
+      'link-id': teacherId
     }
 
-    //TODO: verify that randomly generated token is unique (very very unlikely that it isn't but just in case)
+    //TODO: verify that randomly generated token value is unique (very very unlikely that it isn't but just in case)
 
     //insert token into database
     mdh.mongoDbHelper(function(database) {
