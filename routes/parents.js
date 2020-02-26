@@ -29,22 +29,21 @@ router.get('/', async function(req, res) {
       else {
         const token = req.query['token']
 
-        //get list of consultants
+        //get list of parents
         dbo.collection('tokens').findOne( { _id: token }, function(tokenErr, tokenRes) {
           if (tokenErr) reject(tokenErr);
           
           if (tokenRes == null || tokenRes.linkId == null) {
             resolve('Invalid token')
-            return;
           }
+          else {
+            dbo.collection('parents').findOne( { _id: ObjectId(tokenRes.linkId) }, function(parentErr, parentRes) {
+              if (parentErr) reject(parentErr);
+              
+              resolve(parentRes);
+            });
 
-          dbo.collection('parents').findOne( { _id: ObjectId(tokenRes.linkId) }, function(parentErr, parentRes) {
-            if (parentErr) reject(parentErr);
-            
-            resolve(parentRes);
-
-            db.close();
-          });
+          }
         });
       }
     });
@@ -52,8 +51,9 @@ router.get('/', async function(req, res) {
 
   //return list through api
   const data = await promise.catch((err) => console.log(err));
+  db.close();
   if (data === 'Invalid token')
-    res.status(400).send(util.makeErrorJson('The provided token does not match any parent.'));
+    res.status(400).send(util.invalidToken());
   else 
     res.status(200).send(JSON.stringify(data));
 });
@@ -138,18 +138,19 @@ router.post('/register/', async function(req, res) {
       insertSuccess = false;
     });
     if (!insertSuccess) {
+      res.status(500).send(util.makeErrorJson('Failed to insert parent into database'));
       return;
     }
 
     //generate random token that links to parent
     randToken = crypto.randomBytes(64).toString('hex');
     const token = {
-      _id: randToken,
+      value: randToken,
       type: 'parent',
-      linkId: parentId
+      'link-id': parentId
     }
 
-    //TODO: verify that randomly generated token is unique (very very unlikely that it isn't but just in case)
+    //TODO: verify that randomly generated token value is unique (very very unlikely that it isn't but just in case)
 
     //insert token into database
     mdh.mongoDbHelper(function(database) {

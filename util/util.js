@@ -20,3 +20,9 @@ function verify(required, data) {
 }
 
 exports.verify = verify;
+
+function invalidToken() {
+  return makeErrorJson('The provided token is invalid.');
+}
+
+exports.invalidToken = invalidToken;
