@@ -28,16 +28,19 @@ router.get('/', async function(req, res) {
       }
       else {
         const token = req.query['token']
+
         //get list of consultants
         dbo.collection('tokens').findOne( { _id: token }, function(tokenErr, tokenRes) {
           if (tokenErr) reject(tokenErr);
-
-          console.log(tokenRes.linkId);
           
+          if (tokenRes == null || tokenRes.linkId == null) {
+            resolve('Invalid token')
+            return;
+          }
+
           dbo.collection('parents').findOne( { _id: ObjectId(tokenRes.linkId) }, function(parentErr, parentRes) {
             if (parentErr) reject(parentErr);
             
-            console.log(parentRes)
             resolve(parentRes);
 
             db.close();
@@ -49,7 +52,10 @@ router.get('/', async function(req, res) {
 
   //return list through api
   const data = await promise.catch((err) => console.log(err));
-  res.status(200).send(JSON.stringify(data));
+  if (data === 'Invalid token')
+    res.status(400).send(util.makeErrorJson('The provided token does not match any parent.'));
+  else 
+    res.status(200).send(JSON.stringify(data));
 });
 
 // POST new parent
@@ -72,8 +78,8 @@ router.post('/register/', async function(req, res) {
   //data is valid
   else {
     const parent = {
-      firstName: req.body['first-name'],
-      lastName: req.body['last-name'],
+      'first-name': req.body['first-name'],
+      'last-name': req.body['last-name'],
       email: req.body['email'],
       children: req.body['children']
     }
