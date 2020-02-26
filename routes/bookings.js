@@ -13,9 +13,18 @@ router.get('/', async function(req, res) {
   const promise = new Promise(function(resolve, reject) {
     mdh.mongoDbHelper(function(database) {
       const db = database; 
-      const dbo = db.db(global.NAME);
+      const dbo = db.db();
 
-      const query = (req.query['teacher-id']) ? { 'teacher-id': ObjectId(req.query['teacher-id']) } : {};
+      let query = {};
+      if (req.query['teacher-id']) {
+        if (req.query['teacher-id'].match(/^[0-9a-fA-F]{24}$/)) {
+          query = { 'teacher-id': ObjectId(req.query['teacher-id']) };
+        }
+        else {
+          res.status(400).send(util.makeErrorJson('Invalid teacher id.'));
+          return;
+        }
+      }
     
       dbo.collection('bookings').find(query).toArray(function(err, result) {
         if (err) reject(err);
@@ -27,7 +36,10 @@ router.get('/', async function(req, res) {
 
   //return data via api
   const bookings = await promise.catch((err) => console.log(err));
-  res.status(200).send(bookings);
+  if (bookings != null)
+    res.status(200).send(bookings);
+  else 
+    res.status(400).send(util.makeErrorJson('No teacher with matching teacher id found.'));
 });
 
 //POST bookings for a teacher
