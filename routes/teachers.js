@@ -27,8 +27,10 @@ router.get('/', async function(req, res) {
         query = { _id: { $in: teacherIds } }
       }
 
+      const projection = { projection: { password: 0}}
+
       //get list of teachers
-      dbo.collection('teachers').find(query).toArray(function(err, result) {
+      dbo.collection('teachers').find(query, projection).toArray(function(err, result) {
         if (err) reject(err);
         resolve(result);
         db.close();
@@ -59,8 +61,8 @@ router.post('/register/', async function(req, res) {
   else {
     const hash = bcrypt.hashSync(req.body['password'], 10)
     const teacher = {
-      firstName: req.body['first-name'],
-      lastName: req.body['last-name'],
+      'first-name': req.body['first-name'],
+      'last-name': req.body['last-name'],
       email: req.body['email'],
       password: hash
     }

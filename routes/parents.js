@@ -78,8 +78,8 @@ router.post('/register/', async function(req, res) {
   //data is valid
   else {
     const parent = {
-      firstName: req.body['first-name'],
-      lastName: req.body['last-name'],
+      'first-name': req.body['first-name'],
+      'last-name': req.body['last-name'],
       email: req.body['email'],
       children: req.body['children']
     }
