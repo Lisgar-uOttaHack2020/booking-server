@@ -1,5 +1,5 @@
 const mdh = require('./mongodb');
-deleteCollection('bookings');
+deleteCollection('parents');
 
 //helper function to wipe databases
 function deleteCollection(collection) {

@@ -7,8 +7,6 @@ const bcrypt = require('bcrypt')
 const crypto = require('crypto')
 const router = express.Router();
 
-var teacher = null;
-
 const securityKey = 'tempTeachers'
 
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -21,8 +19,16 @@ router.get('/', async function(req, res) {
       var db = database; 
       var dbo = db.db();
 
-      //get list of consultants
-      dbo.collection('teachers').find({}).toArray(function(err, result) {
+      let query = {}
+      if (req.query.teachers) {
+        teacherIds = req.query.teachers.map(function(teacher) {
+          return ObjectId(teacher);
+        })
+        query = { _id: { $in: teacherIds } }
+      }
+
+      //get list of teachers
+      dbo.collection('teachers').find(query).toArray(function(err, result) {
         if (err) reject(err);
         resolve(result);
         db.close();
