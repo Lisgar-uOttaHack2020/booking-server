@@ -30,14 +30,14 @@ router.get('/', async function(req, res) {
         const token = req.query['token']
 
         //get list of parents
-        dbo.collection('tokens').findOne( { _id: token }, function(tokenErr, tokenRes) {
+        dbo.collection('tokens').findOne( { value: token }, function(tokenErr, tokenRes) {
           if (tokenErr) reject(tokenErr);
           
-          if (tokenRes == null || tokenRes.linkId == null) {
+          if (tokenRes == null || tokenRes['link-id'] == null) {
             resolve('Invalid token')
           }
           else {
-            dbo.collection('parents').findOne( { _id: ObjectId(tokenRes.linkId) }, function(parentErr, parentRes) {
+            dbo.collection('parents').findOne( { _id: ObjectId(tokenRes['link-id']) }, function(parentErr, parentRes) {
               if (parentErr) reject(parentErr);
               
               resolve(parentRes);
@@ -51,7 +51,6 @@ router.get('/', async function(req, res) {
 
   //return list through api
   const data = await promise.catch((err) => console.log(err));
-  db.close();
   if (data === 'Invalid token')
     res.status(400).send(util.invalidToken());
   else 
