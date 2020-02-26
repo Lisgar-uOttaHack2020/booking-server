@@ -15,7 +15,7 @@ router.get('/', async function(req, res) {
       const db = database; 
       const dbo = db.db(global.NAME);
 
-      const query = (req.query.consultantId) ? { consultantId: ObjectId(consultantId) } : {};
+      const query = (req.query['teacher-id']) ? { 'teacher-id': ObjectId(req.query['teacher-id']) } : {};
     
       dbo.collection('bookings').find(query).toArray(function(err, result) {
         if (err) reject(err);
@@ -26,8 +26,8 @@ router.get('/', async function(req, res) {
   })
 
   //return data via api
-  const customerId = await promise.catch((err) => console.log(err));
-  res.status(200).send(customerId);
+  const bookings = await promise.catch((err) => console.log(err));
+  res.status(200).send(bookings);
 });
 
 //POST bookings for a teacher
