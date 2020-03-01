@@ -1,3 +1,5 @@
+const crypto = require('crypto')
+
 function makeErrorJson(str) {
   return `{ "error": "${ str }" }`;
 } 
@@ -32,3 +34,32 @@ function serverError() {
 }
 
 exports.serverError = serverError;
+
+function generateToken(type, id, database) {
+  
+    //generate random token that links to teacher
+    randToken = crypto.randomBytes(64).toString('hex');
+    const token = {
+      value: randToken,
+      type: type,
+      'link-id': id
+    }
+
+    //TODO: verify that randomly generated token value is unique (very very unlikely that it isn't but just in case)
+
+    const db = database; 
+    const dbo = db.db();
+    
+    //insert token into database
+    //TODO: instead of just replacing tokens, give tokens an expiry date
+    dbo.collection('tokens').replaceOne( { 'link-id': id }, token, { upsert: true }, function(err) {
+      if (err)
+        console.log(err);
+
+      db.close();
+    });
+
+    return randToken;
+}
+
+exports.generateToken = generateToken;

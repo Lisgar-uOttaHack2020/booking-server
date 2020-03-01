@@ -3,7 +3,6 @@ const mdh = require('../util/mongodb')
 const util = require('../util/util')
 const bodyParser = require('body-parser');
 const validator = require('email-validator')
-const crypto = require('crypto')
 const ObjectId = require('mongodb').ObjectId; 
 const router = express.Router();
 
@@ -142,32 +141,14 @@ router.post('/register/', async function(req, res) {
     }
 
     //generate random token that links to parent
-    randToken = crypto.randomBytes(64).toString('hex');
-    const token = {
-      value: randToken,
-      type: 'parent',
-      'link-id': parentId
-    }
-
-    //TODO: verify that randomly generated token value is unique (very very unlikely that it isn't but just in case)
-
-    //insert token into database
-    mdh.mongoDbHelper(function(database) {
-      const db = database; 
-      const dbo = db.db();
-      
-      //insert token into database
-      //TODO: instead of just replacing tokens, give tokens an expiry date
-      dbo.collection('tokens').replaceOne( { linkId: parentId }, token, { upsert: true }, function(err) {
-        if (err)
-          console.log(err);
-     
-        db.close();
+    const tokenPromise = new Promise(function(resolve) {
+      mdh.mongoDbHelper(function(database) {
+         resolve(util.generateToken('parent', parentId, database));
       });
     });
-
+   
+    const randToken = await tokenPromise;
     res.status(200).send(JSON.stringify({ token: randToken}));
-
   }
 });
 

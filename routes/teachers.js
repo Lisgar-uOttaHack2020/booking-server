@@ -4,7 +4,6 @@ const util = require('../util/util')
 const bodyParser = require('body-parser');
 const validator = require('email-validator')
 const bcrypt = require('bcrypt')
-const crypto = require('crypto')
 const router = express.Router();
 
 const securityKey = 'tempTeachers'
@@ -75,16 +74,27 @@ router.post('/login/', async function(req, res) {
           db.close();
         }
         
-        //TODO: generate new token if not exists or refresh current one
+        //TODO: refresh token on login
         //find associated token in database
         else {
           //check that password is correct
           if (bcrypt.compareSync(req.body['password'], teacherRes.password)) {
 
-            dbo.collection('tokens').findOne( { 'link-id': teacherRes._id }, function(tokenErr, tokenRes) {
+            dbo.collection('tokens').findOne( { 'link-id': teacherRes._id }, async function(tokenErr, tokenRes) {
               if (tokenErr) {
                 res.status(500).send(util.serverError());
                 reject(tokenErr);
+              }
+              else if (tokenRes == null) {
+                //generate new token for teacher
+                const tokenPromise = new Promise(function(resolve) {
+                  mdh.mongoDbHelper(function(database) {
+                      resolve(util.generateToken('teacher', teacherRes._id, database));
+                  });
+                });
+                
+                const randToken = await tokenPromise;
+                res.status(200).send(JSON.stringify({ token: randToken}));
               }
               else {
                 res.status(200).send(JSON.stringify( { token: tokenRes.value } ));
@@ -185,32 +195,15 @@ router.post('/register/', async function(req, res) {
       return;
     }
 
-    //generate random token that links to teacher
-    randToken = crypto.randomBytes(64).toString('hex');
-    const token = {
-      value: randToken,
-      type: 'teacher',
-      'link-id': teacherId
-    }
-
-    //TODO: verify that randomly generated token value is unique (very very unlikely that it isn't but just in case)
-
-    //insert token into database
+   //generate random token that links to teacher
+   const tokenPromise = new Promise(function(resolve) {
     mdh.mongoDbHelper(function(database) {
-      const db = database; 
-      const dbo = db.db();
-      
-      //insert token into database
-      //TODO: instead of just replacing tokens, give tokens an expiry date
-      dbo.collection('tokens').replaceOne( { linkId: teacherId }, token, { upsert: true }, function(err) {
-        if (err)
-          console.log(err);
-     
-        db.close();
-      });
+       resolve(util.generateToken('teacher', teacherId, database));
     });
-
-    res.status(200).send(JSON.stringify({ token: randToken}));
+  });
+ 
+  const randToken = await tokenPromise;
+  res.status(200).send(JSON.stringify({ token: randToken}));
 
   }
 });

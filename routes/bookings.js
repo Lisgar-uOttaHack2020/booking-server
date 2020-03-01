@@ -9,6 +9,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 
 //GET list of bookings for a parent
 router.get('/', async function(req, res) {
+
   //connect to database
   const queryPromise = new Promise(function(resolve, reject) {
     mdh.mongoDbHelper(function(database) {
@@ -29,7 +30,7 @@ router.get('/', async function(req, res) {
             resolve(null);
           }
           else {
-            resolve(result);
+            resolve( { 'teacher-id': ObjectId(result['link-id']) } );
           }
         });
       }
