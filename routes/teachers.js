@@ -66,7 +66,7 @@ router.post('/login/', async function(req, res) {
       //find teacher in database
       dbo.collection('teachers').findOne( teacher, function(teacherErr, teacherRes) {
         if (teacherErr) {
-          res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+          res.status(500).send(util.serverError());
           console.log(teacherErr)
           db.close();
         }
@@ -83,7 +83,7 @@ router.post('/login/', async function(req, res) {
 
             dbo.collection('tokens').findOne( { 'link-id': teacherRes._id }, function(tokenErr, tokenRes) {
               if (tokenErr) {
-                res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+                res.status(500).send(util.serverError());
                 reject(tokenErr);
               }
               else {
@@ -136,7 +136,7 @@ router.post('/register/', async function(req, res) {
         
         dbo.collection('teachers').findOne( { email: req.body['email'] } , function(err, result) {
           if (err) {
-            res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+            res.status(500).send(util.serverError());
             reject(err);
           }
           else {
@@ -164,7 +164,7 @@ router.post('/register/', async function(req, res) {
         
         dbo.collection('teachers').insertOne(teacher, function(err, result) {
           if (err) {
-            res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+            res.status(500).send(util.serverError());
             reject(err);
           }
           else {

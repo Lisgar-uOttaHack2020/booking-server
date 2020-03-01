@@ -26,3 +26,9 @@ function invalidToken() {
 }
 
 exports.invalidToken = invalidToken;
+
+function serverError() {
+  return makeErrorJson('An internal server error occurred.')
+}
+
+exports.serverError = serverError;
