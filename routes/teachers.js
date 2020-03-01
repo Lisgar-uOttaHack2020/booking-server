@@ -43,6 +43,67 @@ router.get('/', async function(req, res) {
   res.status(200).send(JSON.stringify(data));
 });
 
+// POST login teacher
+router.post('/login/', async function(req, res) {
+  //check that data is valid
+  const required = ['email', 'password'];
+  const v = util.verify(required, req.body);
+  if (v.error) {
+    res.status(400).send(util.makeErrorJson(v.response + 'is not defined'));
+  }
+
+  //data is valid
+  else {
+    const teacher = {
+      email: req.body['email'],
+    }
+
+    //get the teacher's token (if username/password is valid)
+    mdh.mongoDbHelper(function(database) {
+      const db = database;
+      const dbo = db.db();
+
+      //find teacher in database
+      dbo.collection('teachers').findOne( teacher, function(teacherErr, teacherRes) {
+        if (teacherErr) {
+          res.status(500).send(util.serverError());
+          console.log(teacherErr)
+          db.close();
+        }
+        else if (teacherRes == null) {
+          res.status(400).send(util.makeErrorJson('Invalid email or password'));
+          db.close();
+        }
+        
+        //TODO: generate new token if not exists or refresh current one
+        //find associated token in database
+        else {
+          //check that password is correct
+          if (bcrypt.compareSync(req.body['password'], teacherRes.password)) {
+
+            dbo.collection('tokens').findOne( { 'link-id': teacherRes._id }, function(tokenErr, tokenRes) {
+              if (tokenErr) {
+                res.status(500).send(util.serverError());
+                reject(tokenErr);
+              }
+              else {
+                res.status(200).send(JSON.stringify( { token: tokenRes.value } ));
+              }
+              db.close();
+            });
+          }
+          
+          //invalid password
+          else {
+            res.status(400).send(util.makeErrorJson('Invalid email or password'));
+            db.close();
+          }
+        }
+      });
+    });
+  }
+});
+
 // POST new teacher
 router.post('/register/', async function(req, res) {
   //check that data is valid
@@ -75,7 +136,7 @@ router.post('/register/', async function(req, res) {
         
         dbo.collection('teachers').findOne( { email: req.body['email'] } , function(err, result) {
           if (err) {
-            res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+            res.status(500).send(util.serverError());
             reject(err);
           }
           else {
@@ -103,7 +164,7 @@ router.post('/register/', async function(req, res) {
         
         dbo.collection('teachers').insertOne(teacher, function(err, result) {
           if (err) {
-            res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+            res.status(500).send(util.serverError());
             reject(err);
           }
           else {

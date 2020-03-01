@@ -91,7 +91,7 @@ router.post('/register/', async function(req, res) {
         
         dbo.collection('parents').findOne( { email: req.body['email'] } , function(err, result) {
           if (err) {
-            res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+            res.status(500).send(util.serverError());
             reject(err);
           }
           else {
@@ -119,7 +119,7 @@ router.post('/register/', async function(req, res) {
         
         dbo.collection('parents').insertOne(parent, function(err, result) {
           if (err) {
-            res.status(500).send(util.makeErrorJson('An internal server error occurred.'));
+            res.status(500).send(util.serverError());
             reject(err);
           }
           else {
