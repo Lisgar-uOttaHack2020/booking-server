@@ -3,7 +3,7 @@ const mdh = require('../util/mongodb')
 const util = require('../util/util')
 const bodyParser = require('body-parser');
 const validator = require('email-validator')
-const ObjectId = require('mongodb').ObjectId; 
+const ObjectId = require('mongodb').ObjectId;
 const router = express.Router();
 
 const securityKey = 'temp'
@@ -11,11 +11,11 @@ const securityKey = 'temp'
 router.use(bodyParser.urlencoded({ extended: true }));
 
 // GET parent
-router.get('/', async function(req, res) {
+router.get('/', async function (req, res) {
   //connect to database
-  const promise = new Promise(function(resolve, reject) {
-    mdh.mongoDbHelper(function(database) {
-      var db = database; 
+  const promise = new Promise(function (resolve, reject) {
+    mdh.mongoDbHelper(function (database) {
+      var db = database;
       var dbo = db.db();
 
       const required = ['token'];
@@ -29,16 +29,16 @@ router.get('/', async function(req, res) {
         const token = req.query['token']
 
         //get list of parents
-        dbo.collection('tokens').findOne( { value: token }, function(tokenErr, tokenRes) {
+        dbo.collection('tokens').findOne({ value: token }, function (tokenErr, tokenRes) {
           if (tokenErr) reject(tokenErr);
-          
+
           if (tokenRes == null || tokenRes['link-id'] == null) {
             resolve('Invalid token')
           }
           else {
-            dbo.collection('parents').findOne( { _id: ObjectId(tokenRes['link-id']) }, function(parentErr, parentRes) {
+            dbo.collection('parents').findOne({ _id: ObjectId(tokenRes['link-id']) }, function (parentErr, parentRes) {
               if (parentErr) reject(parentErr);
-              
+
               resolve(parentRes);
             });
 
@@ -52,12 +52,12 @@ router.get('/', async function(req, res) {
   const data = await promise.catch((err) => console.log(err));
   if (data === 'Invalid token')
     res.status(400).send(util.invalidToken());
-  else 
+  else
     res.status(200).send(JSON.stringify(data));
 });
 
 // POST new parent
-router.post('/register/', async function(req, res) {
+router.post('/register/', async function (req, res) {
   //check that data is valid
   const required = ['security-key', 'first-name', 'last-name', 'email', 'children'];
   const v = util.verify(required, req.body);
@@ -83,12 +83,12 @@ router.post('/register/', async function(req, res) {
     }
 
     //verify that email is unique within database
-    const checkEmail = new Promise(function(resolve, reject) {
-      mdh.mongoDbHelper(function(database) {
-        const db = database; 
+    const checkEmail = new Promise(function (resolve, reject) {
+      mdh.mongoDbHelper(function (database) {
+        const db = database;
         const dbo = db.db();
-        
-        dbo.collection('parents').findOne( { email: req.body['email'] } , function(err, result) {
+
+        dbo.collection('parents').findOne({ email: req.body['email'] }, function (err, result) {
           if (err) {
             res.status(500).send(util.serverError());
             reject(err);
@@ -111,12 +111,12 @@ router.post('/register/', async function(req, res) {
     }
 
     //email is unique, insert parent into database
-    const parentPromise = new Promise(function(resolve, reject) {
-      mdh.mongoDbHelper(function(database) {
-        const db = database; 
+    const parentPromise = new Promise(function (resolve, reject) {
+      mdh.mongoDbHelper(function (database) {
+        const db = database;
         const dbo = db.db();
-        
-        dbo.collection('parents').insertOne(parent, function(err, result) {
+
+        dbo.collection('parents').insertOne(parent, function (err, result) {
           if (err) {
             res.status(500).send(util.serverError());
             reject(err);
@@ -141,14 +141,14 @@ router.post('/register/', async function(req, res) {
     }
 
     //generate random token that links to parent
-    const tokenPromise = new Promise(function(resolve) {
-      mdh.mongoDbHelper(function(database) {
-         resolve(util.generateToken('parent', parentId, database));
+    const tokenPromise = new Promise(function (resolve) {
+      mdh.mongoDbHelper(function (database) {
+        resolve(util.generateToken('parent', parentId, database));
       });
     });
-   
+
     const randToken = await tokenPromise;
-    res.status(200).send(JSON.stringify({ token: randToken}));
+    res.status(200).send(JSON.stringify({ token: randToken }));
   }
 });
 
