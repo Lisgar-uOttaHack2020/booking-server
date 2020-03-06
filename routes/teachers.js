@@ -11,25 +11,25 @@ const securityKey = 'tempTeachers'
 router.use(bodyParser.urlencoded({ extended: true }));
 
 // GET list of teachers
-router.get('/', async function(req, res) {
+router.get('/', async function (req, res) {
   //connect to database
-  const promise = new Promise(function(resolve, reject) {
-    mdh.mongoDbHelper(function(database) {
-      var db = database; 
+  const promise = new Promise(function (resolve, reject) {
+    mdh.mongoDbHelper(function (database) {
+      var db = database;
       var dbo = db.db();
 
       let query = {}
       if (req.query.teachers) {
-        teacherIds = req.query.teachers.map(function(teacher) {
+        teacherIds = req.query.teachers.map(function (teacher) {
           return ObjectId(teacher);
         })
         query = { _id: { $in: teacherIds } }
       }
 
-      const projection = { projection: { password: 0}}
+      const projection = { projection: { password: 0 } }
 
       //get list of teachers
-      dbo.collection('teachers').find(query, projection).toArray(function(err, result) {
+      dbo.collection('teachers').find(query, projection).toArray(function (err, result) {
         if (err) reject(err);
         resolve(result);
         db.close();
@@ -43,7 +43,7 @@ router.get('/', async function(req, res) {
 });
 
 // POST login teacher
-router.post('/login/', async function(req, res) {
+router.post('/login/', async function (req, res) {
   //check that data is valid
   const required = ['email', 'password'];
   const v = util.verify(required, req.body);
@@ -58,12 +58,12 @@ router.post('/login/', async function(req, res) {
     }
 
     //get the teacher's token (if username/password is valid)
-    mdh.mongoDbHelper(function(database) {
+    mdh.mongoDbHelper(function (database) {
       const db = database;
       const dbo = db.db();
 
       //find teacher in database
-      dbo.collection('teachers').findOne( teacher, function(teacherErr, teacherRes) {
+      dbo.collection('teachers').findOne(teacher, function (teacherErr, teacherRes) {
         if (teacherErr) {
           res.status(500).send(util.serverError());
           console.log(teacherErr)
@@ -73,36 +73,36 @@ router.post('/login/', async function(req, res) {
           res.status(400).send(util.makeErrorJson('Invalid email or password'));
           db.close();
         }
-        
+
         //TODO: refresh token on login
         //find associated token in database
         else {
           //check that password is correct
           if (bcrypt.compareSync(req.body['password'], teacherRes.password)) {
 
-            dbo.collection('tokens').findOne( { 'link-id': teacherRes._id }, async function(tokenErr, tokenRes) {
+            dbo.collection('tokens').findOne({ 'link-id': teacherRes._id }, async function (tokenErr, tokenRes) {
               if (tokenErr) {
                 res.status(500).send(util.serverError());
                 reject(tokenErr);
               }
               else if (tokenRes == null) {
                 //generate new token for teacher
-                const tokenPromise = new Promise(function(resolve) {
-                  mdh.mongoDbHelper(function(database) {
-                      resolve(util.generateToken('teacher', teacherRes._id, database));
+                const tokenPromise = new Promise(function (resolve) {
+                  mdh.mongoDbHelper(function (database) {
+                    resolve(util.generateToken('teacher', teacherRes._id, database));
                   });
                 });
-                
+
                 const randToken = await tokenPromise;
-                res.status(200).send(JSON.stringify({ token: randToken}));
+                res.status(200).send(JSON.stringify({ token: randToken }));
               }
               else {
-                res.status(200).send(JSON.stringify( { token: tokenRes.value } ));
+                res.status(200).send(JSON.stringify({ token: tokenRes.value }));
               }
               db.close();
             });
           }
-          
+
           //invalid password
           else {
             res.status(400).send(util.makeErrorJson('Invalid email or password'));
@@ -115,7 +115,7 @@ router.post('/login/', async function(req, res) {
 });
 
 // POST new teacher
-router.post('/register/', async function(req, res) {
+router.post('/register/', async function (req, res) {
   //check that data is valid
   const required = ['security-key', 'first-name', 'last-name', 'email', 'password'];
   const v = util.verify(required, req.body);
@@ -139,12 +139,12 @@ router.post('/register/', async function(req, res) {
     }
 
     //verify that email is unique within database
-    const checkEmail = new Promise(function(resolve, reject) {
-      mdh.mongoDbHelper(function(database) {
-        const db = database; 
+    const checkEmail = new Promise(function (resolve, reject) {
+      mdh.mongoDbHelper(function (database) {
+        const db = database;
         const dbo = db.db();
-        
-        dbo.collection('teachers').findOne( { email: req.body['email'] } , function(err, result) {
+
+        dbo.collection('teachers').findOne({ email: req.body['email'] }, function (err, result) {
           if (err) {
             res.status(500).send(util.serverError());
             reject(err);
@@ -167,12 +167,12 @@ router.post('/register/', async function(req, res) {
     }
 
     //email is unique, insert teacher into database
-    const teacherPromise = new Promise(function(resolve, reject) {
-      mdh.mongoDbHelper(function(database) {
-        const db = database; 
+    const teacherPromise = new Promise(function (resolve, reject) {
+      mdh.mongoDbHelper(function (database) {
+        const db = database;
         const dbo = db.db();
-        
-        dbo.collection('teachers').insertOne(teacher, function(err, result) {
+
+        dbo.collection('teachers').insertOne(teacher, function (err, result) {
           if (err) {
             res.status(500).send(util.serverError());
             reject(err);
@@ -195,18 +195,18 @@ router.post('/register/', async function(req, res) {
       return;
     }
 
-   //generate random token that links to teacher
-   const tokenPromise = new Promise(function(resolve) {
-    mdh.mongoDbHelper(function(database) {
-       resolve(util.generateToken('teacher', teacherId, database));
+    //generate random token that links to teacher
+    const tokenPromise = new Promise(function (resolve) {
+      mdh.mongoDbHelper(function (database) {
+        resolve(util.generateToken('teacher', teacherId, database));
+      });
     });
-  });
- 
-  const randToken = await tokenPromise;
-  res.status(200).send(JSON.stringify({ token: randToken}));
+
+    const randToken = await tokenPromise;
+    res.status(200).send(JSON.stringify({ token: randToken }));
 
   }
 });
 
-  
+
 module.exports = router;

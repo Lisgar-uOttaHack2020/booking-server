@@ -1,6 +1,6 @@
 const express = require('express');
 const mdh = require('../util/mongodb')
-const ObjectId = require('mongodb').ObjectId; 
+const ObjectId = require('mongodb').ObjectId;
 const util = require('../util/util')
 const bodyParser = require('body-parser');
 const router = express.Router();
@@ -8,18 +8,18 @@ const router = express.Router();
 router.use(bodyParser.urlencoded({ extended: true }));
 
 //GET list of bookings for a parent
-router.get('/', async function(req, res) {
+router.get('/', async function (req, res) {
 
   //connect to database
-  const queryPromise = new Promise(function(resolve, reject) {
-    mdh.mongoDbHelper(function(database) {
-      const db = database; 
+  const queryPromise = new Promise(function (resolve, reject) {
+    mdh.mongoDbHelper(function (database) {
+      const db = database;
       const dbo = db.db();
 
       if (req.query['teacher-token']) {
         token = req.query['teacher-token'];
-        
-        dbo.collection('tokens').findOne( { value: token }, function(err, result) {
+
+        dbo.collection('tokens').findOne({ value: token }, function (err, result) {
           if (err) {
             res.status(500).send(util.serverError())
             reject(err);
@@ -30,7 +30,7 @@ router.get('/', async function(req, res) {
             resolve(null);
           }
           else {
-            resolve( { 'teacher-id': ObjectId(result['link-id']) } );
+            resolve({ 'teacher-id': ObjectId(result['link-id']) });
           }
         });
       }
@@ -47,12 +47,12 @@ router.get('/', async function(req, res) {
   }
 
   //find bookings with given query
-  const bookingsPromise = new Promise(function(resolve, reject) {
-    mdh.mongoDbHelper(function(database) {
+  const bookingsPromise = new Promise(function (resolve, reject) {
+    mdh.mongoDbHelper(function (database) {
       const db = database;
       const dbo = db.db();
 
-      dbo.collection('bookings').find(query).toArray(function(err, result) {
+      dbo.collection('bookings').find(query).toArray(function (err, result) {
         if (err) reject(err);
         resolve(result);
         db.close();
@@ -66,7 +66,7 @@ router.get('/', async function(req, res) {
 });
 
 //POST bookings for a teacher
-router.post('/teacher', async function(req, res) {
+router.post('/teacher', async function (req, res) {
   const data = req.body
 
   //check that required data is present
@@ -81,7 +81,7 @@ router.post('/teacher', async function(req, res) {
 
     //check that bookings are valid
     let validBookings = true;
-    data.bookings.forEach(function(booking) {
+    data.bookings.forEach(function (booking) {
       //TODO: verify no overlapping times (within request and database)
       if (!booking['time'] || !booking['time']['start'] || !booking['time']['end']) { //time not listed
         res.status(400).send(util.makeErrorJson('Missing booking time(s)'));
@@ -104,25 +104,25 @@ router.post('/teacher', async function(req, res) {
     }
 
     //connect to database
-    const teacherPromise = new Promise(function(resolve) {
-      mdh.mongoDbHelper(function(database) {
-        const db = database; 
+    const teacherPromise = new Promise(function (resolve) {
+      mdh.mongoDbHelper(function (database) {
+        const db = database;
         const dbo = db.db();
 
         //Check that the token is valid
         const token = data.token;
 
-        dbo.collection('tokens').findOne( { value: token }, function(tokenErr, tokenRes) {
+        dbo.collection('tokens').findOne({ value: token }, function (tokenErr, tokenRes) {
           if (tokenErr) reject(tokenErr);
-          
+
           if (tokenRes == null || tokenRes['link-id'] == null) {
             resolve('Invalid token')
             db.close();
           }
           else {
-            dbo.collection('teachers').findOne( { _id: ObjectId(tokenRes['link-id']) }, function(teacherErr, teacherRes) {
+            dbo.collection('teachers').findOne({ _id: ObjectId(tokenRes['link-id']) }, function (teacherErr, teacherRes) {
               if (teacherErr) reject(teacherErr);
-            
+
               console.log(teacherRes);
               resolve(teacherRes);
               db.close();
@@ -140,12 +140,12 @@ router.post('/teacher', async function(req, res) {
     }
     else {
       //insert bookings if token is valid
-      const bookingPromise = new Promise(function(resolve) {
-        mdh.mongoDbHelper(function(database) {
-          const db = database; 
+      const bookingPromise = new Promise(function (resolve) {
+        mdh.mongoDbHelper(function (database) {
+          const db = database;
           const dbo = db.db();
 
-          const bookings = data.bookings.map(function(booking) {
+          const bookings = data.bookings.map(function (booking) {
             return {
               'parent-id': null,
               'teacher-id': teacher._id,
@@ -158,8 +158,8 @@ router.post('/teacher', async function(req, res) {
               }
             }
           });
-  
-          dbo.collection('bookings').insertMany(bookings, function(err, res) {
+
+          dbo.collection('bookings').insertMany(bookings, function (err, res) {
             if (err) reject(err);
 
             console.log(res);
@@ -183,14 +183,14 @@ router.post('/teacher', async function(req, res) {
         for (let i = 0; i < data.bookings.length; i++) {
           idList.push(bookingIds[i.toString()]);
         }
-        res.status(200).send({'booking-ids': idList});
+        res.status(200).send({ 'booking-ids': idList });
       }
     }
   }
 });
 
 //POST bookings for a child
-router.post('/parent', async function(req, res) {
+router.post('/parent', async function (req, res) {
   const data = req.body
 
   //check that required data is present
@@ -202,53 +202,28 @@ router.post('/parent', async function(req, res) {
 
   //data is present
   else {
-
-    //check that bookings are valid
-    let validBookings = true;
-    data.bookings.forEach(function(booking) {
-      //TODO: verify no overlapping times (within request and database)
-      if (!booking['time'] || !booking['time']['start'] || !booking['time']['end']) { //time not listed
-        res.status(400).send(util.makeErrorJson('Missing booking time(s)'));
-        validBookings = false;
-        return;
-      }
-      if (!booking['room']) {
-        res.status(400).send(util.makeErrorJson('Missing room number(s)'));
-        validBookings = false;
-        return;
-      }
-      if (!booking['date']) {
-        res.status(400).send(util.makeErrorJson('Missing date(s)'));
-        validBookings = false;
-        return;
-      }
-    })
-    if (!validBookings) {
-      return;
-    }
-
     //connect to database
-    const teacherPromise = new Promise(function(resolve) {
-      mdh.mongoDbHelper(function(database) {
-        const db = database; 
+    const parentPromise = new Promise(function (resolve) {
+      mdh.mongoDbHelper(function (database) {
+        const db = database;
         const dbo = db.db();
 
         //Check that the token is valid
         const token = data.token;
 
-        dbo.collection('tokens').findOne( { value: token }, function(tokenErr, tokenRes) {
+        dbo.collection('tokens').findOne({ value: token }, function (tokenErr, tokenRes) {
           if (tokenErr) reject(tokenErr);
-          
+
           if (tokenRes == null || tokenRes['link-id'] == null) {
             resolve('Invalid token')
             db.close();
           }
           else {
-            dbo.collection('teachers').findOne( { _id: ObjectId(tokenRes['link-id']) }, function(teacherErr, teacherRes) {
-              if (teacherErr) reject(teacherErr);
-            
-              console.log(teacherRes);
-              resolve(teacherRes);
+            dbo.collection('parents').findOne({ _id: ObjectId(tokenRes['link-id']) }, function (parentErr, parentRes) {
+              if (parentErr) reject(parentErr);
+
+              console.log(parentRes);
+              resolve(parentRes);
               db.close();
             });
           }
@@ -257,57 +232,47 @@ router.post('/parent', async function(req, res) {
       });
     });
 
-    const teacher = await teacherPromise.catch((err) => console.log(err));
-    if (teacher === 'Invalid token') {
+    const parent = await teacherPromise.catch((err) => console.log(err));
+    if (parent === 'Invalid token') {
       res.status(400).send(util.invalidToken());
       return;
     }
+    else if (parent.children.includes(req.body['child-name'])) {
+      res.status(400).send(util.makeErrorJson('Invalid child'));
+      return;
+    }
     else {
-      //insert bookings if token is valid
-      const bookingPromise = new Promise(function(resolve) {
-        mdh.mongoDbHelper(function(database) {
-          const db = database; 
+      //modify bookings if token is valid
+      const bookingPromise = new Promise(function (resolve) {
+        mdh.mongoDbHelper(function (database) {
+          const db = database;
           const dbo = db.db();
 
-          const bookings = data.bookings.map(function(booking) {
-            return {
-              'parent-id': null,
-              'teacher-id': teacher._id,
-              'child-name': null,
-              'room': booking.room,
-              'date': booking.date,
-              'time': {
-                start: booking.time.start,
-                end: booking.time.end
-              }
-            }
-          });
-  
-          dbo.collection('bookings').insertMany(bookings, function(err, res) {
+          const bookingIds = req.query['bookings'].map(function (booking) {
+            return ObjectId(booking);
+          })
+          const query = { _id: { $in: bookingIds } }
+          const newValues = { $set: { 'child-name': req.body['child-name'], 'parent-id': parent._id } };
+          dbo.collection('bookings').updateMany(query, newValues, function (err, res) {
             if (err) reject(err);
+            console.log(res.result.nModified + " document(s) updated");
 
-            console.log(res);
-            resolve(res.insertedIds);
+            resolve(true);
             db.close();
           })
         });
       });
 
       let insertSuccess = true;
-      const bookingIds = await bookingPromise.catch((err) => {
+      const success = await bookingsPromise.catch( err => {
         console.log(err);
         insertSuccess = false;
-      });
-      if (!insertSuccess) {
-        res.status(500).send(util.makeErrorJson('Failed to insert bookings into database'));
-        return;
+      })
+      if (insertSuccess) {
+        res.status(200).send(JSON.stringify({ result: 'Successfully booked appointments' }));
       }
       else {
-        let idList = [];
-        for (let i = 0; i < data.bookings.length; i++) {
-          idList.push(bookingIds[i.toString()]);
-        }
-        res.status(200).send({'booking-ids': idList});
+        res.status(500).send(util.serverError);
       }
     }
   }
@@ -437,5 +402,5 @@ router.post('/parent', function(req, res) {
   }
 }); */
 
-  
+
 module.exports = router;
