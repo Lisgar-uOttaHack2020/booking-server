@@ -3,6 +3,7 @@ const mdh = require('../util/mongodb')
 const util = require('../util/util')
 const bodyParser = require('body-parser');
 const validator = require('email-validator')
+const ObjectId = require('mongodb').ObjectId; 
 const bcrypt = require('bcrypt')
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.get('/', async function(req, res) {
       var dbo = db.db();
 
       let query = {}
-      if (req.query.teachers) {
+      if (Array.isArray(req.query.teachers)) {
         teacherIds = req.query.teachers.map(function(teacher) {
           return ObjectId(teacher);
         })
