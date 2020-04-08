@@ -7,6 +7,12 @@ const router = express.Router();
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
+router.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "https://parent-teacher-booking.herokuapp.com");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 //GET list of bookings for a parent
 router.get('/', async function(req, res) {
 

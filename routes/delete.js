@@ -7,6 +7,12 @@ const router = express.Router();
 
 router.use(bodyParser.urlencoded({ extended: true }));
 
+router.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "https://parent-teacher-booking.herokuapp.com");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 router.delete('/', async function(req, res) {
   if (req.query['password'] !== 'seCre7P@ssW0Rd312') {
     res.status(400).send(util.makeErrorJson('Invalid password'));
